@@ -66,7 +66,7 @@ VITE_API_URL=https://your-backend-api-domain.com/api
 - **Secrets**: Rotate `JWT_SECRET` periodically to ensure session security.
 
 ---
-
+ 
 ## 5. Post-Deployment Steps
 
 1. **Login as Admin**: Access the `/admin` route to set up your first round.
