@@ -9,7 +9,7 @@ class DualitySocketService {
         if (this.socket?.connected) return;
 
         this.socket = io(SOCKET_URL, {
-            transports: ['websocket', 'polling'],
+            transports: ['polling'],
         });
 
         this.socket.on('connect', () => {

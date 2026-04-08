@@ -5,6 +5,10 @@
   "outputDirectory": "build",
   "rewrites": [
     {
+      "source": "/socket.io/:path*",
+      "destination": "http://51.21.134.56/socket.io/:path*"
+    },
+    {
       "source": "/api/:path*",
       "destination": "http://51.21.134.56/api/:path*"
     }
