@@ -24,7 +24,9 @@ import {
   createDualityQuestion,
   updateDualityQuestion,
   deleteDualityQuestion,
-  getDualityUsers
+  getDualityUsers,
+  getDualitySettings,
+  updateDualitySettings
 } from '../../services/duality.service';
 import dualitySocketService from '../../services/dualitySocket.service';
 
@@ -58,7 +60,7 @@ interface Student {
 
 
 
-type ActiveTab = 'questions' | 'students' | 'leaderboard';
+type ActiveTab = 'questions' | 'students' | 'leaderboard' | 'settings';
 
 const getQuestionPoints = (difficulty: 'Easy' | 'Medium' | 'Hard') => {
   if (difficulty === 'Easy') return 100;
@@ -74,6 +76,8 @@ export function AdminDashboard({
   onLogout: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('questions');
+  const [isOpenRegistration, setIsOpenRegistration] = useState(false);
+  const [isPasteEnabled, setIsPasteEnabled] = useState(true);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedDifficulty, setSelectedDifficulty] = useState<'All' | 'Easy' | 'Medium' | 'Hard'>('All');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -134,6 +138,17 @@ export function AdminDashboard({
   useEffect(() => {
     fetchQuestions();
     fetchStudents();
+    
+    // Fetch initial settings
+    getDualitySettings().then(result => {
+        if (result.success) {
+            setIsOpenRegistration(result.data.isOpenRegistration);
+            if (result.data.isPasteEnabled !== undefined) {
+               setIsPasteEnabled(result.data.isPasteEnabled);
+            }
+        }
+    }).catch(console.error);
+
     dualitySocketService.connect();
 
     // Listen for socket updates
@@ -150,6 +165,42 @@ export function AdminDashboard({
       unsubscribeQuestion?.();
     };
   }, []);
+
+  const toggleOpenRegistration = async () => {
+    try {
+        const newValue = !isOpenRegistration;
+        // Optimistic update
+        setIsOpenRegistration(newValue);
+        const result = await updateDualitySettings({ isOpenRegistration: newValue });
+        if (!result.success) {
+            // Revert on failure
+            setIsOpenRegistration(!newValue);
+            alert('Failed to update registration settings');
+        }
+    } catch (error) {
+        console.error('Error toggling registration:', error);
+        setIsOpenRegistration(!isOpenRegistration);
+        alert('Error updating setting');
+    }
+  };
+
+  const togglePasteEnabled = async () => {
+    try {
+        const newValue = !isPasteEnabled;
+        // Optimistic update
+        setIsPasteEnabled(newValue);
+        const result = await updateDualitySettings({ isPasteEnabled: newValue });
+        if (!result.success) {
+            // Revert on failure
+            setIsPasteEnabled(!newValue);
+            alert('Failed to update pasting settings');
+        }
+    } catch (error) {
+        console.error('Error toggling pasting:', error);
+        setIsPasteEnabled(!isPasteEnabled);
+        alert('Error updating setting');
+    }
+  };
 
   const isSameLocalDate = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear()
@@ -368,10 +419,20 @@ export function AdminDashboard({
                   <Trophy className="w-4 h-4" />
                   Leaderboard
                 </button>
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'settings'
+                    ? 'bg-white text-black'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 text-gray-400">
                 <User className="w-4 h-4" />
                 <span className="text-sm">{userName}</span>
@@ -710,6 +771,64 @@ export function AdminDashboard({
               </div>
             </div>
           </>
+        ) : activeTab === 'settings' ? (
+          <div className="space-y-6 max-w-3xl">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-white mb-2">Platform Settings</h2>
+              <p className="text-sm text-gray-400">Configure global behaviors and restrictions for the practice environment.</p>
+            </div>
+            
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
+              {/* Registration Toggle Setting */}
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-12">
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-2">Open Registration</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    When enabled, any user with a verified <span className="text-gray-300 font-semibold">@bmu.edu.in</span> email address can instantly log in and access the platform. 
+                    When disabled, the platform enters restricted mode—only users explicitly added to the Allowlist below can authenticate.
+                  </p>
+                </div>
+                <div className="flex-shrink-0 mt-2 md:mt-0">
+                 <button
+                    onClick={toggleOpenRegistration}
+                    className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm transition-all focus:outline-none whitespace-nowrap ${
+                      isOpenRegistration 
+                        ? 'bg-white text-black font-semibold shadow-[0_0_20px_rgba(255,255,255,0.15)] ring-2 ring-white/50 ring-offset-2 ring-offset-zinc-900' 
+                        : 'bg-zinc-800 text-gray-400 hover:text-white hover:bg-zinc-700 font-medium border border-zinc-700 hover:border-zinc-500'
+                    }`}
+                  >
+                    <Settings className={`w-4 h-4 ${isOpenRegistration ? 'animate-[spin_4s_linear_infinite]' : ''}`} />
+                    {isOpenRegistration ? 'Status: OPEN' : 'Status: LOCKED'}
+                 </button>
+                </div>
+              </div>
+            </div>
+              
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
+              {/* Code Paste Setting */}
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-12">
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-2">Editor Pasting</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    Controls whether students can paste code straight into the editor. When disabled, standard clipboard actions and keyboard shortcuts (<span className="text-gray-300 font-semibold">Ctrl+V</span> / <span className="text-gray-300 font-semibold">Cmd+V</span>) are intercepted and blocked in the coding environment.
+                  </p>
+                </div>
+                <div className="flex-shrink-0 mt-2 md:mt-0">
+                 <button
+                    onClick={togglePasteEnabled}
+                    className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm transition-all focus:outline-none whitespace-nowrap ${
+                      isPasteEnabled 
+                        ? 'bg-zinc-800 text-gray-400 hover:text-white hover:bg-zinc-700 font-medium border border-zinc-700 hover:border-zinc-500'
+                        : 'bg-white text-black font-semibold shadow-[0_0_20px_rgba(255,255,255,0.15)] ring-2 ring-white/50 ring-offset-2 ring-offset-zinc-900' 
+                    }`}
+                  >
+                    <Code2 className={`w-4 h-4`} />
+                    {isPasteEnabled ? 'Status: ALLOWED' : 'Status: BLOCKED'}
+                 </button>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

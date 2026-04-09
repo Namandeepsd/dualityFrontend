@@ -17,6 +17,18 @@ export const getDualityLeaderboard = async () => {
     return res.data;
 };
 
+// ========== SETTINGS ==========
+
+export const getDualitySettings = async () => {
+    const res = await api.get('/duality/settings');
+    return res.data;
+};
+
+export const updateDualitySettings = async (settings: { isOpenRegistration?: boolean, isPasteEnabled?: boolean }) => {
+    const res = await api.put('/duality/settings', settings);
+    return res.data;
+};
+
 // ========== ALLOWED EMAILS ==========
 
 export const getAllowedEmails = async () => {

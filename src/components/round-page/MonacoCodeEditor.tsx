@@ -10,6 +10,7 @@ interface MonacoCodeEditorProps {
     typingDelay?: number;
     onRun?: () => void;
     onSubmit?: () => void;
+    disablePaste?: boolean;
 }
 
 export function MonacoCodeEditor({
@@ -20,6 +21,7 @@ export function MonacoCodeEditor({
     typingDelay = 0,
     onRun,
     onSubmit,
+    disablePaste = false,
 }: MonacoCodeEditorProps) {
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -36,6 +38,25 @@ export function MonacoCodeEditor({
         editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => {
             onSubmit?.();
         });
+        
+        if (disablePaste) {
+            const domNode = editor.getDomNode();
+            if (domNode) {
+                // Intercept standard clipboard events
+                domNode.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, true);
+            }
+            
+            // Intercept keyboard shortcuts just in case
+            editor.onKeyDown((e) => {
+                if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            });
+        }
 
         // Focus editor
         editor.focus();

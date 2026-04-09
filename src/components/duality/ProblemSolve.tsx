@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Play, CheckCircle2, XCircle, Code2, FileText, Clock, RotateCcw } from 'lucide-react';
-import { getDualityQuestion, submitDualityCode, runDualityCode } from '../../services/duality.service';
+import { getDualityQuestion, submitDualityCode, runDualityCode, getDualitySettings } from '../../services/duality.service';
 import { MonacoCodeEditor } from '../round-page/MonacoCodeEditor';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
@@ -60,6 +60,7 @@ export function ProblemSolve({
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [settings, setSettings] = useState<{ isPasteEnabled?: boolean }>({ isPasteEnabled: true });
   const dualityUserId = getDualityUserId();
 
   const getDraftOrBoilerplate = (lang: Language, currentProblem: Problem | null): string => {
@@ -71,20 +72,28 @@ export function ProblemSolve({
   };
 
   useEffect(() => {
-    const fetchProblem = async () => {
+    const fetchData = async () => {
       try {
-        const result = await getDualityQuestion(problemId);
-        if (result.success) {
-          setProblem(result.data);
-          setCode(getDraftOrBoilerplate(selectedLanguage, result.data));
+        const [problemResult, settingsResult] = await Promise.all([
+           getDualityQuestion(problemId),
+           getDualitySettings().catch(() => ({ success: false, data: {} }))
+        ]);
+        
+        if (settingsResult.success) {
+           setSettings(settingsResult.data);
+        }
+
+        if (problemResult.success) {
+          setProblem(problemResult.data);
+          setCode(getDraftOrBoilerplate(selectedLanguage, problemResult.data));
         }
       } catch (error) {
-        console.error('Error fetching problem:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchProblem();
+    fetchData();
   }, [problemId]);
 
   const handleLanguageChange = (lang: Language) => {
@@ -331,6 +340,7 @@ export function ProblemSolve({
                     onChange={(val) => setCode(val)}
                     onRun={handleRunCode}
                     onSubmit={handleSubmit}
+                    disablePaste={!settings.isPasteEnabled}
                   />
                 </div>
               </Panel>

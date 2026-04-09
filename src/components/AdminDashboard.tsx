@@ -7,7 +7,9 @@ import {
   PlayCircle,
   LogOut,
   Menu,
-  X
+  X,
+  Settings,
+  Code2
 } from 'lucide-react';
 import { QuestionsSection } from './dashboard/QuestionsSection';
 import { RoundsSection } from './dashboard/RoundsSection';
@@ -16,7 +18,7 @@ import { RoundControlSection } from './dashboard/RoundControlSection';
 import { CheatingAlertsList } from './dashboard/CheatingAlertsList';
 import { socketService } from '../services/socket.service';
 
-type Section = 'overview' | 'questions' | 'rounds' | 'teams' | 'control';
+type Section = 'overview' | 'questions' | 'rounds' | 'teams' | 'control' | 'settings';
 
 export function AdminDashboard() {
   const [activeSection, setActiveSection] = useState<Section>('overview');
@@ -39,6 +41,7 @@ export function AdminDashboard() {
     { id: 'rounds' as Section, label: 'Rounds', icon: Layers },
     { id: 'teams' as Section, label: 'Teams', icon: Users },
     { id: 'control' as Section, label: 'Round Control', icon: PlayCircle },
+    { id: 'settings' as Section, label: 'Settings', icon: Settings },
   ];
 
   return (
@@ -116,6 +119,7 @@ export function AdminDashboard() {
           {activeSection === 'rounds' && <RoundsSection />}
           {activeSection === 'teams' && <TeamsSection />}
           {activeSection === 'control' && <RoundControlSection />}
+          {activeSection === 'settings' && <SettingsSection />}
         </main>
       </div>
     </div>
@@ -293,6 +297,72 @@ function OverviewSection({ onNavigate }: { onNavigate: (section: Section) => voi
               </div>
             ))
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingsSection() {
+  const [isPasteEnabled, setIsPasteEnabled] = useState(true);
+
+  useEffect(() => {
+    import('../services/settings.service').then(({ getSettings }) => {
+      getSettings().then(res => {
+        if (res.success && res.data) {
+          setIsPasteEnabled(res.data.isPasteEnabled !== false);
+        }
+      }).catch(console.error);
+    });
+  }, []);
+
+  const togglePasteEnabled = async () => {
+    try {
+      const newValue = !isPasteEnabled;
+      setIsPasteEnabled(newValue);
+      
+      const { updateSettings } = await import('../services/settings.service');
+      const res = await updateSettings({ isPasteEnabled: newValue });
+      
+      if (!res.success) {
+        setIsPasteEnabled(!newValue);
+        alert('Failed to update settings');
+      }
+    } catch (err) {
+      console.error(err);
+      setIsPasteEnabled(!isPasteEnabled);
+      alert('Error updating setting');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <div className="border-b border-zinc-800 pb-4 mb-4">
+          <h2 className="text-xl font-bold text-white">Global Platform Settings</h2>
+          <p className="text-sm text-gray-400 mt-1">Configure competition-wide behaviors and restrictions.</p>
+        </div>
+
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-12 py-4">
+          <div>
+            <h3 className="text-lg font-bold text-white mb-2">Editor Pasting</h3>
+            <p className="text-sm text-gray-500 leading-relaxed max-w-2xl">
+              Controls whether students can paste code straight into the Monaco editor during a round. When disabled, standard clipboard actions and keyboard shortcuts (<span className="text-gray-300 font-semibold">Ctrl+V</span> / <span className="text-gray-300 font-semibold">Cmd+V</span>) are intercepted and blocked in the coding environment.
+            </p>
+          </div>
+          <div className="flex-shrink-0 mt-2 md:mt-0">
+            <button
+              onClick={togglePasteEnabled}
+              className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm transition-all focus:outline-none whitespace-nowrap ${
+                isPasteEnabled 
+                  ? 'bg-zinc-800 text-gray-400 hover:text-white hover:bg-zinc-700 font-medium border border-zinc-700 hover:border-zinc-500'
+                  : 'bg-white text-black font-semibold shadow-[0_0_20px_rgba(255,255,255,0.15)] ring-2 ring-white/50 ring-offset-2 ring-offset-zinc-900' 
+              }`}
+            >
+              <Code2 className={`w-4 h-4`} />
+              {isPasteEnabled ? 'Status: ALLOWED' : 'Status: BLOCKED'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

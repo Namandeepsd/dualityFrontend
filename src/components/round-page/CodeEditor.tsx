@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Play, Send, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { MonacoCodeEditor } from './MonacoCodeEditor';
 import { runCode, submitSolution } from '../../services/round.service';
+import { getSettings } from '../../services/settings.service';
 
 interface Question {
   _id: string;  // MongoDB ID
@@ -84,6 +85,16 @@ export function CodeEditor({ roundId, question, activeEffects, isShieldActive, o
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testResults, setTestResults] = useState<TestResult[] | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [isPasteEnabled, setIsPasteEnabled] = useState(true);
+
+  // Fetch settings on mount
+  useEffect(() => {
+    getSettings().then(res => {
+      if (res.success && res.data) {
+        setIsPasteEnabled(res.data.isPasteEnabled !== false);
+      }
+    }).catch(console.error);
+  }, []);
 
   // Handle question change - load saved code for new question
   useEffect(() => {
@@ -256,6 +267,7 @@ export function CodeEditor({ roundId, question, activeEffects, isShieldActive, o
             typingDelay={activeEffects.find((e) => e.type === 'typing-delay') ? 2000 : 0}
             onRun={handleRun}
             onSubmit={handleSubmit}
+            disablePaste={!isPasteEnabled}
           />
         </div>
 
