@@ -26,6 +26,12 @@ export interface Question {
         cpp?: string;
         java?: string;
     };
+    driverCode?: {
+        python?: string;
+        c?: string;
+        cpp?: string;
+        java?: string;
+    };
     createdBy?: {
         _id: string;
         name: string;
@@ -55,6 +61,12 @@ export interface CreateQuestionData {
     }[];
     testCases: number;
     boilerplateCode?: {
+        python?: string;
+        c?: string;
+        cpp?: string;
+        java?: string;
+    };
+    driverCode?: {
         python?: string;
         c?: string;
         cpp?: string;

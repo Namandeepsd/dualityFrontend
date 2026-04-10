@@ -27,6 +27,12 @@ interface Question {
     cpp?: string;
     java?: string;
   };
+  driverCode?: {
+    python?: string;
+    c?: string;
+    cpp?: string;
+    java?: string;
+  };
 }
 
 export function QuestionsSection() {
@@ -53,6 +59,12 @@ export function QuestionsSection() {
       c: '// Write your solution here\n',
       cpp: '// Write your solution here\n',
       java: '// Write your solution here\n',
+    },
+    driverCode: {
+      python: '',
+      c: '',
+      cpp: '',
+      java: '',
     },
   });
 
@@ -99,6 +111,12 @@ export function QuestionsSection() {
           cpp: '// Write your solution here\n',
           java: '// Write your solution here\n',
         },
+        driverCode: question.driverCode || {
+          python: '',
+          c: '',
+          cpp: '',
+          java: '',
+        },
       });
     } else {
       setEditingQuestion(null);
@@ -117,6 +135,12 @@ export function QuestionsSection() {
           c: '// Write your solution here\n',
           cpp: '// Write your solution here\n',
           java: '// Write your solution here\n',
+        },
+        driverCode: {
+          python: '',
+          c: '',
+          cpp: '',
+          java: '',
         },
       });
     }
@@ -504,9 +528,9 @@ export function QuestionsSection() {
                   </p>
                 </div>
 
-                {/* Boilerplate Code Section */}
+                {/* Boilerplate & Driver Code Section */}
                 <div className="col-span-2">
-                  <label className="block text-sm text-gray-300 mb-2">Boilerplate Code (Starter Code)</label>
+                  <label className="block text-sm text-gray-300 mb-2">Editor Template & Runner Config</label>
                   <div className="bg-black border border-zinc-800 rounded-lg overflow-hidden">
                     {/* Language Tabs */}
                     <div className="flex border-b border-zinc-800">
@@ -524,22 +548,46 @@ export function QuestionsSection() {
                         </button>
                       ))}
                     </div>
-                    {/* Code Editor */}
-                    <textarea
-                      value={formData.boilerplateCode?.[activeBoilerplateTab as keyof typeof formData.boilerplateCode] || ''}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        boilerplateCode: {
-                          ...formData.boilerplateCode,
-                          [activeBoilerplateTab]: e.target.value
-                        }
-                      })}
-                      className="w-full bg-zinc-900 p-3 text-white font-mono text-sm focus:outline-none"
-                      rows={10}
-                      placeholder={`Enter ${activeBoilerplateTab} starter code...`}
-                    />
+                    {/* Code Editors */}
+                    <div className="p-4 bg-zinc-900 space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Visible Boilerplate Code</label>
+                        <textarea
+                          value={formData.boilerplateCode?.[activeBoilerplateTab as keyof typeof formData.boilerplateCode] || ''}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            boilerplateCode: {
+                              ...formData.boilerplateCode,
+                              [activeBoilerplateTab]: e.target.value
+                            }
+                          })}
+                          className="w-full bg-black p-3 text-white font-mono text-sm border border-zinc-800 focus:outline-none focus:border-zinc-600 rounded"
+                          rows={6}
+                          placeholder={`Enter ${activeBoilerplateTab} starter code...`}
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <label className="block text-xs font-semibold text-amber-500 uppercase tracking-wider">Hidden Driver Code (LeetCode Style)</label>
+                          <span className="text-[10px] text-gray-500">Inject user's code using {'{{USER_CODE}}'} placeholder</span>
+                        </div>
+                        <textarea
+                          value={formData.driverCode?.[activeBoilerplateTab as keyof typeof formData.driverCode] || ''}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            driverCode: {
+                              ...formData.driverCode,
+                              [activeBoilerplateTab]: e.target.value
+                            }
+                          })}
+                          className="w-full bg-zinc-900 p-3 text-yellow-500 font-mono text-sm border border-zinc-800 focus:outline-none focus:border-zinc-600 rounded"
+                          rows={10}
+                          placeholder={`import sys\n\n{{USER_CODE}}\n\nif __name__ == '__main__':\n    print("Test Output")`}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">This code will be pre-loaded for teams when they open the question</p>
+                  <p className="text-xs text-gray-500 mt-2">Driver code overrides standard I/O reading. Leave driver code blank to use traditional CP execution defaults.</p>
                 </div>
               </div>
 

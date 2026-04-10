@@ -40,6 +40,7 @@ interface Question {
   examples: Example[];
   testCases: TestCase[];
   boilerplate: BoilerplateCode;
+  driverCode?: BoilerplateCode;
 }
 
 interface Student {
@@ -97,6 +98,12 @@ export function AdminDashboard({
     examples: [{ input: '', output: '', explanation: '' }],
     testCases: [{ input: '', output: '' }],
     boilerplate: {
+      python: '',
+      c: '',
+      cpp: '',
+      java: ''
+    },
+    driverCode: {
       python: '',
       c: '',
       cpp: '',
@@ -279,6 +286,7 @@ export function AdminDashboard({
       examples: question.examples,
       testCases: question.testCases,
       boilerplate: question.boilerplate,
+      driverCode: question.driverCode || { python: '', c: '', cpp: '', java: '' },
     });
   };
 
@@ -292,6 +300,12 @@ export function AdminDashboard({
       examples: [{ input: '', output: '', explanation: '' }],
       testCases: [{ input: '', output: '' }],
       boilerplate: {
+        python: '',
+        c: '',
+        cpp: '',
+        java: ''
+      },
+      driverCode: {
         python: '',
         c: '',
         cpp: '',
@@ -1116,6 +1130,56 @@ export function AdminDashboard({
                       rows={4}
                       className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white text-sm font-mono placeholder-gray-600 focus:outline-none focus:border-zinc-600"
                       placeholder="public int[] twoSum(int[] nums, int target) {&#10;    &#10;}"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+
+              {/* Driver Code */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="block text-sm text-gray-300">Driver Code (Hidden Wrapper)</label>
+                  <span className="text-xs text-gray-500">Inject user\'s code using {'{{USER_CODE}}'} placeholder</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-amber-500 mb-2">Python Driver</label>
+                    <textarea
+                      value={formData.driverCode?.python || ''}
+                      onChange={(e) => setFormData({ ...formData, driverCode: { ...formData.driverCode!, python: e.target.value } })}
+                      rows={6}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-yellow-500 text-sm font-mono focus:outline-none focus:border-zinc-600"
+                      placeholder="import sys\n\n{{USER_CODE}}\n\nif __name__ == '__main__':\n    print('Output')"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-amber-500 mb-2">C Driver</label>
+                    <textarea
+                      value={formData.driverCode?.c || ''}
+                      onChange={(e) => setFormData({ ...formData, driverCode: { ...formData.driverCode!, c: e.target.value } })}
+                      rows={6}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-yellow-500 text-sm font-mono focus:outline-none focus:border-zinc-600"
+                      placeholder="#include <stdio.h>\n\n{{USER_CODE}}\n\nint main() {\n    return 0;\n}"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-amber-500 mb-2">C++ Driver</label>
+                    <textarea
+                      value={formData.driverCode?.cpp || ''}
+                      onChange={(e) => setFormData({ ...formData, driverCode: { ...formData.driverCode!, cpp: e.target.value } })}
+                      rows={6}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-yellow-500 text-sm font-mono focus:outline-none focus:border-zinc-600"
+                      placeholder="#include <iostream>\n\n{{USER_CODE}}\n\nint main() {\n    return 0;\n}"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-amber-500 mb-2">Java Driver</label>
+                    <textarea
+                      value={formData.driverCode?.java || ''}
+                      onChange={(e) => setFormData({ ...formData, driverCode: { ...formData.driverCode!, java: e.target.value } })}
+                      rows={6}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-yellow-500 text-sm font-mono focus:outline-none focus:border-zinc-600"
+                      placeholder="import java.util.*;\n\n{{USER_CODE}}\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}"
                     ></textarea>
                   </div>
                 </div>

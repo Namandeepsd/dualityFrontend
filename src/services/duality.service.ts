@@ -72,6 +72,7 @@ export const createDualityQuestion = async (data: {
     examples: { input: string; output: string; explanation?: string }[];
     testCases: { input: string; output: string }[];
     boilerplate?: { python?: string; c?: string; cpp?: string; java?: string };
+    driverCode?: { python?: string; c?: string; cpp?: string; java?: string };
 }) => {
     const res = await api.post('/duality/questions', data);
     return res.data;
