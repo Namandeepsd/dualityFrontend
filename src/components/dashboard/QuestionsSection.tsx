@@ -43,7 +43,6 @@ export function QuestionsSection() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [activeBoilerplateTab, setActiveBoilerplateTab] = useState('python');
   const [formData, setFormData] = useState<Partial<CreateQuestionData>>({
     title: '',
     difficulty: 'Easy',
@@ -144,7 +143,6 @@ export function QuestionsSection() {
         },
       });
     }
-    setActiveBoilerplateTab('python');
     setIsModalOpen(true);
   };
 
@@ -290,45 +288,52 @@ export function QuestionsSection() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-zinc-900 border-b border-zinc-800 p-6 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">
-                {editingQuestion ? 'Edit Question' : 'Add New Question'}
-              </h3>
-              <button
-                onClick={handleCloseModal}
-                className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400" />
-              </button>
-            </div>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <form onSubmit={handleSubmit} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <h2 className="text-2xl font-bold text-white mb-6 flex-shrink-0">
+              {editingQuestion ? 'Edit Question' : 'Add New Question'}
+            </h2>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div className="space-y-6 overflow-y-auto pr-2 flex-1">
               {error && (
                 <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-red-500 text-sm">
                   {error}
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm text-gray-300 mb-2">Title</label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white focus:outline-none focus:border-zinc-600"
-                    required
-                  />
+              <div className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Question Title *</label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="w-full bg-black border border-zinc-800 rounded-lg py-3 px-4 text-white placeholder-gray-600 focus:outline-none focus:border-zinc-600"
+                      placeholder="e.g., Two Sum"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Category *</label>
+                    <input
+                      type="text"
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="w-full bg-black border border-zinc-800 rounded-lg py-3 px-4 text-white placeholder-gray-600 focus:outline-none focus:border-zinc-600"
+                      placeholder="e.g., Arrays, Trees, DP"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Difficulty</label>
+                  <label className="block text-sm text-gray-300 mb-2">Difficulty *</label>
                   <select
                     value={formData.difficulty}
                     onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as 'Easy' | 'Medium' | 'Hard' })}
-                    className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white focus:outline-none focus:border-zinc-600"
+                    className="w-full bg-black border border-zinc-800 rounded-lg py-3 px-4 text-white focus:outline-none focus:border-zinc-600"
                   >
                     <option value="Easy">Easy</option>
                     <option value="Medium">Medium</option>
@@ -337,66 +342,88 @@ export function QuestionsSection() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Category</label>
-                  <input
-                    type="text"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white focus:outline-none focus:border-zinc-600"
-                    placeholder="e.g., Arrays, Trees, DP"
-                    required
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm text-gray-300 mb-2">Description</label>
+                  <label className="block text-sm text-gray-300 mb-2">Description *</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white focus:outline-none focus:border-zinc-600"
-                    rows={3}
+                    className="w-full bg-black border border-zinc-800 rounded-lg py-3 px-4 text-white placeholder-gray-600 focus:outline-none focus:border-zinc-600"
+                    rows={4}
+                    placeholder="Enter question description..."
                     required
                   />
                 </div>
 
-                <div className="col-span-2">
-                  <label className="block text-sm text-gray-300 mb-2">Input Format</label>
-                  <textarea
-                    value={formData.inputFormat}
-                    onChange={(e) => setFormData({ ...formData, inputFormat: e.target.value })}
-                    className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white focus:outline-none focus:border-zinc-600"
-                    rows={2}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Input Format *</label>
+                    <textarea
+                      value={formData.inputFormat}
+                      onChange={(e) => setFormData({ ...formData, inputFormat: e.target.value })}
+                      className="w-full bg-black border border-zinc-800 rounded-lg py-3 px-4 text-white placeholder-gray-600 focus:outline-none focus:border-zinc-600"
+                      rows={3}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Output Format *</label>
+                    <textarea
+                      value={formData.outputFormat}
+                      onChange={(e) => setFormData({ ...formData, outputFormat: e.target.value })}
+                      className="w-full bg-black border border-zinc-800 rounded-lg py-3 px-4 text-white placeholder-gray-600 focus:outline-none focus:border-zinc-600"
+                      rows={3}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div className="col-span-2">
-                  <label className="block text-sm text-gray-300 mb-2">Output Format</label>
-                  <textarea
-                    value={formData.outputFormat}
-                    onChange={(e) => setFormData({ ...formData, outputFormat: e.target.value })}
-                    className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white focus:outline-none focus:border-zinc-600"
-                    rows={2}
-                    required
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm text-gray-300 mb-2">Constraints</label>
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Constraints *</label>
                   <textarea
                     value={formData.constraints}
                     onChange={(e) => setFormData({ ...formData, constraints: e.target.value })}
-                    className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white focus:outline-none focus:border-zinc-600"
-                    rows={2}
+                    className="w-full bg-black border border-zinc-800 rounded-lg py-3 px-4 text-white placeholder-gray-600 focus:outline-none focus:border-zinc-600"
+                    rows={3}
+                    placeholder="Enter constraints separated by newlines"
                     required
                   />
                 </div>
+              </div>
 
 
-                <div className="col-span-2">
-                  <label className="block text-sm text-gray-300 mb-2">Examples</label>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm text-gray-300">Examples *</label>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({
+                      ...formData,
+                      examples: [...(formData.examples || []), { input: '', output: '', explanation: '' }]
+                    })}
+                    className="text-sm text-blue-400 hover:text-blue-300"
+                  >
+                    + Add Example
+                  </button>
+                </div>
+                <div className="space-y-3">
                   {formData.examples?.map((example, index) => (
-                    <div key={index} className="mb-3 p-3 bg-black border border-zinc-800 rounded-lg">
+                    <div key={index} className="bg-black border border-zinc-800 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs text-gray-500">Example {index + 1}</span>
+                        {(formData.examples?.length || 0) > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newExamples = [...(formData.examples || [])];
+                              newExamples.splice(index, 1);
+                              setFormData({ ...formData, examples: newExamples });
+                            }}
+                            className="text-xs text-red-500 hover:text-red-400"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
                       <div className="space-y-2">
                         <input
                           type="text"
@@ -407,7 +434,7 @@ export function QuestionsSection() {
                             newExamples[index] = { ...newExamples[index], input: e.target.value };
                             setFormData({ ...formData, examples: newExamples });
                           }}
-                          className="w-full bg-zinc-900 border border-zinc-800 rounded py-1 px-2 text-white text-sm"
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-zinc-600"
                           required
                         />
                         <input
@@ -419,7 +446,7 @@ export function QuestionsSection() {
                             newExamples[index] = { ...newExamples[index], output: e.target.value };
                             setFormData({ ...formData, examples: newExamples });
                           }}
-                          className="w-full bg-zinc-900 border border-zinc-800 rounded py-1 px-2 text-white text-sm"
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-zinc-600"
                           required
                         />
                         <input
@@ -431,36 +458,38 @@ export function QuestionsSection() {
                             newExamples[index] = { ...newExamples[index], explanation: e.target.value };
                             setFormData({ ...formData, examples: newExamples });
                           }}
-                          className="w-full bg-zinc-900 border border-zinc-800 rounded py-1 px-2 text-white text-sm"
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-zinc-600"
                         />
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Hidden Test Cases */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <label className="block text-sm text-gray-300">Hidden Test Cases</label>
+                    <span className="text-xs text-gray-500">(Private)</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setFormData({
                       ...formData,
-                      examples: [...(formData.examples || []), { input: '', output: '', explanation: '' }]
+                      hiddenTestCases: [...(formData.hiddenTestCases || []), { input: '', output: '', explanation: '' }]
                     })}
-                    className="text-sm text-gray-400 hover:text-white"
+                    className="text-sm text-blue-400 hover:text-blue-300"
                   >
-                    + Add Example
+                    + Add Test Case
                   </button>
                 </div>
-
-                {/* Hidden Test Cases Section */}
-                <div className="col-span-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm text-gray-300">
-                      Hidden Test Cases
-                      <span className="text-xs text-gray-500 ml-2">(Private - not visible to teams)</span>
-                    </label>
-                  </div>
+                <div className="space-y-3">
                   {formData.hiddenTestCases && formData.hiddenTestCases.length > 0 ? (
                     formData.hiddenTestCases.map((testCase, index) => (
-                      <div key={index} className="mb-3 p-3 bg-black border border-amber-900/30 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-amber-500 font-medium">Hidden Test Case {index + 1}</span>
+                      <div key={index} className="bg-black border border-zinc-800 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs text-amber-500 font-medium">Test Case {index + 1}</span>
                           <button
                             type="button"
                             onClick={() => {
@@ -468,7 +497,7 @@ export function QuestionsSection() {
                               newHiddenTests.splice(index, 1);
                               setFormData({ ...formData, hiddenTestCases: newHiddenTests });
                             }}
-                            className="text-xs text-red-400 hover:text-red-300"
+                            className="text-xs text-red-500 hover:text-red-400"
                           >
                             Remove
                           </button>
@@ -483,7 +512,7 @@ export function QuestionsSection() {
                               newHiddenTests[index] = { ...newHiddenTests[index], input: e.target.value };
                               setFormData({ ...formData, hiddenTestCases: newHiddenTests });
                             }}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded py-1 px-2 text-white text-sm"
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-zinc-600"
                           />
                           <input
                             type="text"
@@ -494,18 +523,18 @@ export function QuestionsSection() {
                               newHiddenTests[index] = { ...newHiddenTests[index], output: e.target.value };
                               setFormData({ ...formData, hiddenTestCases: newHiddenTests });
                             }}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded py-1 px-2 text-white text-sm"
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-zinc-600"
                           />
                           <input
                             type="text"
-                            placeholder="Explanation (optional)"
+                            placeholder="Explanation (Optional)"
                             value={testCase.explanation || ''}
                             onChange={(e) => {
                               const newHiddenTests = [...(formData.hiddenTestCases || [])];
                               newHiddenTests[index] = { ...newHiddenTests[index], explanation: e.target.value };
                               setFormData({ ...formData, hiddenTestCases: newHiddenTests });
                             }}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded py-1 px-2 text-white text-sm"
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-zinc-600"
                           />
                         </div>
                       </div>
@@ -513,102 +542,127 @@ export function QuestionsSection() {
                   ) : (
                     <div className="text-sm text-gray-500 italic mb-2">No hidden test cases added yet</div>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => setFormData({
-                      ...formData,
-                      hiddenTestCases: [...(formData.hiddenTestCases || []), { input: '', output: '', explanation: '' }]
-                    })}
-                    className="text-sm text-gray-400 hover:text-white"
-                  >
-                    + Add Hidden Test Case
-                  </button>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Hidden test cases are used for evaluation but not shown to teams
-                  </p>
                 </div>
+              </div>
 
-                {/* Boilerplate & Driver Code Section */}
-                <div className="col-span-2">
-                  <label className="block text-sm text-gray-300 mb-2">Editor Template & Runner Config</label>
-                  <div className="bg-black border border-zinc-800 rounded-lg overflow-hidden">
-                    {/* Language Tabs */}
-                    <div className="flex border-b border-zinc-800">
-                      {['python', 'c', 'cpp', 'java'].map((lang) => (
-                        <button
-                          key={lang}
-                          type="button"
-                          onClick={() => setActiveBoilerplateTab(lang)}
-                          className={`px-4 py-2 text-sm font-medium transition-colors ${activeBoilerplateTab === lang
-                            ? 'bg-zinc-900 text-white border-b-2 border-white'
-                            : 'text-gray-400 hover:text-white'
-                            }`}
-                        >
-                          {lang === 'cpp' ? 'C++' : lang.charAt(0).toUpperCase() + lang.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-                    {/* Code Editors */}
-                    <div className="p-4 bg-zinc-900 space-y-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Visible Boilerplate Code</label>
-                        <textarea
-                          value={formData.boilerplateCode?.[activeBoilerplateTab as keyof typeof formData.boilerplateCode] || ''}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            boilerplateCode: {
-                              ...formData.boilerplateCode,
-                              [activeBoilerplateTab]: e.target.value
-                            }
-                          })}
-                          className="w-full bg-black p-3 text-white font-mono text-sm border border-zinc-800 focus:outline-none focus:border-zinc-600 rounded"
-                          rows={6}
-                          placeholder={`Enter ${activeBoilerplateTab} starter code...`}
-                        />
-                      </div>
-                      <div>
-                        <div className="flex justify-between mb-2">
-                          <label className="block text-xs font-semibold text-amber-500 uppercase tracking-wider">Hidden Driver Code (LeetCode Style)</label>
-                          <span className="text-[10px] text-gray-500">Inject user's code using {'{{USER_CODE}}'} placeholder</span>
-                        </div>
-                        <textarea
-                          value={formData.driverCode?.[activeBoilerplateTab as keyof typeof formData.driverCode] || ''}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            driverCode: {
-                              ...formData.driverCode,
-                              [activeBoilerplateTab]: e.target.value
-                            }
-                          })}
-                          className="w-full bg-zinc-900 p-3 text-yellow-500 font-mono text-sm border border-zinc-800 focus:outline-none focus:border-zinc-600 rounded"
-                          rows={10}
-                          placeholder={`import sys\n\n{{USER_CODE}}\n\nif __name__ == '__main__':\n    print("Test Output")`}
-                        />
-                      </div>
-                    </div>
+              {/* Boilerplate Code */}
+              <div className="col-span-2">
+                <label className="block text-sm text-gray-300 mb-3">Boilerplate Code</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">Python</label>
+                    <textarea
+                      value={formData.boilerplateCode?.python || ''}
+                      onChange={(e) => setFormData({ ...formData, boilerplateCode: { ...formData.boilerplateCode!, python: e.target.value } })}
+                      rows={4}
+                      className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white text-sm font-mono placeholder-gray-600 focus:outline-none focus:border-zinc-600"
+                      placeholder="def twoSum(nums, target):&#10;    pass"
+                    ></textarea>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">Driver code overrides standard I/O reading. Leave driver code blank to use traditional CP execution defaults.</p>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">C</label>
+                    <textarea
+                      value={formData.boilerplateCode?.c || ''}
+                      onChange={(e) => setFormData({ ...formData, boilerplateCode: { ...formData.boilerplateCode!, c: e.target.value } })}
+                      rows={4}
+                      className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white text-sm font-mono placeholder-gray-600 focus:outline-none focus:border-zinc-600"
+                      placeholder="int* twoSum(int* nums, int size) {&#10;    &#10;}"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">C++</label>
+                    <textarea
+                      value={formData.boilerplateCode?.cpp || ''}
+                      onChange={(e) => setFormData({ ...formData, boilerplateCode: { ...formData.boilerplateCode!, cpp: e.target.value } })}
+                      rows={4}
+                      className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white text-sm font-mono placeholder-gray-600 focus:outline-none focus:border-zinc-600"
+                      placeholder="vector<int> twoSum(vector<int>& nums, int target) {&#10;    &#10;}"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">Java</label>
+                    <textarea
+                      value={formData.boilerplateCode?.java || ''}
+                      onChange={(e) => setFormData({ ...formData, boilerplateCode: { ...formData.boilerplateCode!, java: e.target.value } })}
+                      rows={4}
+                      className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-white text-sm font-mono placeholder-gray-600 focus:outline-none focus:border-zinc-600"
+                      placeholder="public int[] twoSum(int[] nums, int target) {&#10;    &#10;}"
+                    ></textarea>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 bg-white text-black py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
-                >
-                  {submitting ? 'Saving...' : (editingQuestion ? 'Update Question' : 'Create Question')}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-6 bg-zinc-800 text-white py-2 rounded-lg font-medium hover:bg-zinc-700 transition-colors"
-                >
-                  Cancel
-                </button>
+              {/* Driver Code */}
+              <div className="col-span-2 mt-4">
+                <div className="flex justify-between items-center mb-3">
+                  <label className="block text-sm text-gray-300">Driver Code (Hidden Wrapper)</label>
+                  <span className="text-xs text-gray-500">Inject user's code using {'{{USER_CODE}}'} placeholder</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-amber-500 mb-2">Python Driver</label>
+                    <textarea
+                      value={formData.driverCode?.python || ''}
+                      onChange={(e) => setFormData({ ...formData, driverCode: { ...formData.driverCode!, python: e.target.value } })}
+                      rows={6}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-yellow-500 text-sm font-mono focus:outline-none focus:border-zinc-600"
+                      placeholder="import sys\n\n{{USER_CODE}}\n\nif __name__ == '__main__':\n    print('Output')"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-amber-500 mb-2">C Driver</label>
+                    <textarea
+                      value={formData.driverCode?.c || ''}
+                      onChange={(e) => setFormData({ ...formData, driverCode: { ...formData.driverCode!, c: e.target.value } })}
+                      rows={6}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-yellow-500 text-sm font-mono focus:outline-none focus:border-zinc-600"
+                      placeholder="#include <stdio.h>\n\n{{USER_CODE}}\n\nint main() {\n    return 0;\n}"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-amber-500 mb-2">C++ Driver</label>
+                    <textarea
+                      value={formData.driverCode?.cpp || ''}
+                      onChange={(e) => setFormData({ ...formData, driverCode: { ...formData.driverCode!, cpp: e.target.value } })}
+                      rows={6}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-yellow-500 text-sm font-mono focus:outline-none focus:border-zinc-600"
+                      placeholder="#include <iostream>\n\n{{USER_CODE}}\n\nint main() {\n    return 0;\n}"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-amber-500 mb-2">Java Driver</label>
+                    <textarea
+                      value={formData.driverCode?.java || ''}
+                      onChange={(e) => setFormData({ ...formData, driverCode: { ...formData.driverCode!, java: e.target.value } })}
+                      rows={6}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-2 px-3 text-yellow-500 text-sm font-mono focus:outline-none focus:border-zinc-600"
+                      placeholder="import java.util.*;\n\n{{USER_CODE}}\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}"
+                    ></textarea>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Driver code overrides standard I/O reading. Leave driver code blank to use traditional CP execution defaults.</p>
               </div>
-            </form>
-          </div>
+
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 mt-8 flex-shrink-0">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 bg-white text-black py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                {submitting ? 'Saving...' : (editingQuestion ? 'Save Changes' : 'Add Question')}
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                className="flex-1 bg-zinc-800 text-white py-3 rounded-lg font-medium hover:bg-zinc-700 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

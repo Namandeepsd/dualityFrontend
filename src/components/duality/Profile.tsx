@@ -22,7 +22,7 @@ interface Submission {
   question: {
     title: string;
     difficulty: string;
-  };
+  } | null;
   status: string;
   submittedAt: string;
 }
@@ -59,8 +59,8 @@ export function Profile({
 
   const recentActivity = submissions.map(s => ({
     date: new Date(s.submittedAt).toLocaleDateString(),
-    problem: s.question.title,
-    difficulty: s.question.difficulty,
+    problem: s.question?.title || 'Unknown Problem',
+    difficulty: s.question?.difficulty || 'Unknown',
     status: s.status === 'accepted' ? 'Solved' : 'Attempted'
   }));
 
