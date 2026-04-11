@@ -330,7 +330,7 @@ export function RoundPage({ roundId, onExitRound }: RoundPageProps) {
   // Handle browser back/refresh/close
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      const message = "Are you sure you want to leave the round? Your progress will be saved, but your current session state (like real-time ranking and points) will be refreshed when you re-enter.";
+      const message = "Are you sure you want to leave? All your progress in this round will be lost. Progress is only permanently saved after clicking 'Complete Round'.";
       e.preventDefault();
       e.returnValue = message;
       return message;
@@ -411,12 +411,13 @@ export function RoundPage({ roundId, onExitRound }: RoundPageProps) {
 
   const handleExitRound = async () => {
     const confirmed = window.confirm(
-      "⚠️ Are you sure you want to exit this round?\n\n" +
-      "All your progress will be DELETED:\n" +
-      "• All code submissions will be removed\n" +
-      "• Question statuses will be reset\n" +
-      "• Points earned in this round will be deducted\n\n" +
-      "You will start fresh if you re-enter this round."
+      "⚠️ EXIT ROUND?\n\n" +
+      "All your progress will be PERMANENTLY DELETED:\n" +
+      "• All active code submissions for this round will be removed\n" +
+      "• Question statuses (Solved/Attempted) will be reset\n" +
+      "• Points earned specifically in THIS round will be deducted\n\n" +
+      "Progress is ONLY saved if you click 'Complete Round' instead.\n\n" +
+      "Are you sure you want to exit and LOSE all progress?"
     );
 
     if (confirmed) {
@@ -444,21 +445,21 @@ export function RoundPage({ roundId, onExitRound }: RoundPageProps) {
   };
 
   const handleCompleteRound = async () => {
+    const totalPointsEarned = questions.reduce((sum, q) => sum + (q.status === 'solved' ? q.points : 0), 0);
     const confirmed = window.confirm(
-      "✅ Complete this round?\n\n" +
-      "Your progress will be SAVED:\n" +
-      "• All submissions kept\n" +
-      "• Points remain\n" +
-      "• Question statuses preserved\n\n" +
-      "⚠️ You will NOT be able to re-enter this round.\n\n" +
-      "Are you sure you want to mark this round as complete?"
+      "✅ MARK ROUND AS COMPLETE?\n\n" +
+      "By completing this round:\n" +
+      "• Your current progress and points will be PERMANENTLY SAVED\n" +
+      "• You will NOT be able to re-enter this round again\n" +
+      "• All other teams will see your final score on the leaderboard\n\n" +
+      "Are you sure you want to submit your final results?"
     );
 
     if (confirmed) {
       try {
         // Call API to mark round as completed
         await completeRound(roundId);
-        // Navigate back to dashboard
+        // Exit to dashboard
         onExitRound();
       } catch (error: any) {
         console.error('Error completing round:', error);
