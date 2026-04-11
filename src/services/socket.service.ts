@@ -163,12 +163,34 @@ class SocketService {
 
         // Listen for cheating alerts (Admin)
         this.socket.on('cheating:alert', (data: CheatingAlert) => {
-            console.log('Cheating alert received:', data.teamName, data.violationType);
+            console.log('Cheating alert received:', data.teamName, data.violationType, data.action || 'n/a');
 
-            // Add to buffer
-            this.alertBuffer = [data, ...this.alertBuffer].slice(0, 50);
+            // Add to buffer with merging logic
+            if (data.action === 'end') {
+                // If it's an 'end' alert, update the corresponding 'start' alert in the buffer
+                let found = false;
+                this.alertBuffer = this.alertBuffer.map((a) => {
+                    // Match by team name and violation type where action is 'start' and duration not yet set
+                    if (a.teamName === data.teamName && 
+                        a.violationType === data.violationType && 
+                        a.action === 'start' && 
+                        a.duration === undefined) {
+                        found = true;
+                        return { ...a, duration: data.duration, action: 'end' as const };
+                    }
+                    return a;
+                });
+                
+                // If for some reason we didn't find the start event in the current buffer, add it as is
+                if (!found) {
+                    this.alertBuffer = [data, ...this.alertBuffer].slice(0, 50);
+                }
+            } else {
+                // For 'start' alerts, just add to the list
+                this.alertBuffer = [data, ...this.alertBuffer].slice(0, 50);
+            }
+
             this.saveAlertBuffer();
-
             this.cheatingAlertCallbacks.forEach((callback) => callback(data));
         });
 

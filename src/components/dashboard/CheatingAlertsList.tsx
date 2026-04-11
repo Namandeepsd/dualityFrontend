@@ -12,26 +12,12 @@ export function CheatingAlertsList() {
     }, []);
 
     useEffect(() => {
-        // Initial alerts from buffer
+        // Initial alerts from merged buffer
         setAlerts(socketService.getRecentAlerts());
 
-        // Subscribe to new alerts
-        const unsubscribe = socketService.onCheatingAlert((newAlert) => {
-            setAlerts((prev) => {
-                // If it's an 'end' alert, update the corresponding 'start' alert
-                if (newAlert.action === 'end') {
-                    return prev.map((a) =>
-                        a.teamName === newAlert.teamName &&
-                            a.violationType === newAlert.violationType &&
-                            a.action === 'start' &&
-                            !a.duration // Only update the one that hasn't ended yet
-                            ? { ...a, duration: newAlert.duration, action: 'end' as const }
-                            : a
-                    );
-                }
-                // For 'start' alerts, just add to the list
-                return [newAlert, ...prev].slice(0, 50);
-            });
+        // Update when any alert arrives (SocketService handles the merging logic)
+        const unsubscribe = socketService.onCheatingAlert(() => {
+            setAlerts(socketService.getRecentAlerts());
         });
 
         return () => unsubscribe();

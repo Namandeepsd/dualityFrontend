@@ -81,8 +81,8 @@ export function RoundPage({ roundId, onExitRound }: RoundPageProps) {
   const [sabotageCooldown, setSabotageCooldown] = useState<number | null>(null);
   const [shieldCooldown, setShieldCooldown] = useState<number | null>(null);
   const [tacticalMessage, setTacticalMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
-  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
-  const violationRef = useRef<{ startTime: number | null, type: string | null }>({ startTime: null, type: null });
+  const [isCheatingWarningOpen, setIsCheatingWarningOpen] = useState(false);
+  const violationRef = useRef<{ startTime: number | null }>({ startTime: null });
 
   // Fetch round data and team stats
   useEffect(() => {
@@ -348,36 +348,40 @@ export function RoundPage({ roundId, onExitRound }: RoundPageProps) {
       setIsFullscreen(!!document.fullscreenElement);
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && !isDisqualified) {
-        console.warn('Tab switch detected!');
+    const handleViolationStart = (type: string) => {
+      if (!isDisqualified && !violationRef.current.startTime) {
+        console.warn(`${type} detected!`);
         const now = Date.now();
-        violationRef.current = { startTime: now, type: 'tab-switch' };
+        violationRef.current = { startTime: now };
+        setIsCheatingWarningOpen(true);
         socketService.reportViolation(teamName, round?.name || 'Unknown Round', 'tab-switch', 'start');
-      } else if (document.visibilityState === 'visible' && violationRef.current.startTime && violationRef.current.type === 'tab-switch') {
+      }
+    };
+
+    const handleViolationEnd = (type: string) => {
+      if (violationRef.current.startTime) {
         const duration = Math.round((Date.now() - violationRef.current.startTime) / 1000);
-        console.log(`Tab switch ended. Duration: ${duration}s`);
+        console.log(`${type} ended. Duration: ${duration}s`);
+        // We keep the warning overlay open so the user MUST read and dismiss it
         socketService.reportViolation(teamName, round?.name || 'Unknown Round', 'tab-switch', 'end', duration);
-        violationRef.current = { startTime: null, type: null };
+        violationRef.current = { startTime: null };
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        handleViolationStart('Tab switch');
+      } else if (document.visibilityState === 'visible') {
+        handleViolationEnd('Tab switch');
       }
     };
 
     const handleWindowBlur = () => {
-      if (!isDisqualified && !violationRef.current.startTime) {
-        console.warn('Window blur detected!');
-        const now = Date.now();
-        violationRef.current = { startTime: now, type: 'window-blur' };
-        socketService.reportViolation(teamName, round?.name || 'Unknown Round', 'window-blur', 'start');
-      }
+      handleViolationStart('Window blur');
     };
 
     const handleWindowFocus = () => {
-      if (violationRef.current.startTime && violationRef.current.type === 'window-blur') {
-        const duration = Math.round((Date.now() - violationRef.current.startTime) / 1000);
-        console.log(`Window blur ended. Duration: ${duration}s`);
-        socketService.reportViolation(teamName, round?.name || 'Unknown Round', 'window-blur', 'end', duration);
-        violationRef.current = { startTime: null, type: null };
-      }
+      handleViolationEnd('Window focus');
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -753,8 +757,36 @@ export function RoundPage({ roundId, onExitRound }: RoundPageProps) {
         </div>
       )}
 
+      {/* Cheating Warning Overlay - Highest Priority */}
+      {isCheatingWarningOpen && !isDisqualified && (
+        <div className="fixed inset-0 z-[110] bg-red-600/20 flex items-center justify-center p-6 text-center backdrop-blur-sm transition-all duration-300">
+          <div className="max-w-md w-full bg-zinc-900 border-2 border-red-500 rounded-2xl p-8 shadow-2xl shadow-red-500/20 animate-in fade-in zoom-in">
+            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="w-10 h-10 text-red-500 animate-pulse" />
+            </div>
+            <h2 className="text-3xl font-bold text-red-500 mb-4 uppercase tracking-tighter italic">Warning</h2>
+            <p className="text-white text-lg font-bold mb-4">
+              RULES VIOLATION DETECTED
+            </p>
+            <p className="text-gray-400 mb-6 leading-relaxed">
+              Switching tabs, closing full screen, or losing focus is strictly prohibited during the round. 
+              This event has been logged and reported to the administrators.
+            </p>
+            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 text-sm text-red-400 font-mono mb-6">
+              CONTINUED VIOLATIONS WILL LEAD TO DISQUALIFICATION
+            </div>
+            <button
+               onClick={() => setIsCheatingWarningOpen(false)}
+               className="w-full py-4 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
+            >
+              I Understand
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Fullscreen Warning Overlay */}
-      {!isFullscreen && !isDisqualified && !loading && (
+      {!isFullscreen && !isDisqualified && !loading && !isCheatingWarningOpen && (
         <div className="fixed inset-0 z-[90] bg-black/90 flex items-center justify-center p-6 text-center backdrop-blur-md">
           <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
             <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-6">
