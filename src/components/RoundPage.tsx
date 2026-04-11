@@ -189,7 +189,7 @@ export function RoundPage({ roundId, onExitRound }: RoundPageProps) {
 
     // Subscribe to team stats updates
     const unsubscribeStats = socketService.onTeamStatsUpdate((data: TeamStatsUpdate) => {
-      if (data.teamName === teamName) {
+      if (data.teamName.toLowerCase().trim() === teamName.toLowerCase().trim()) {
         console.log('Real-time team stats update in RoundPage:', data);
         setSabotageTokens(data.tokens.sabotage);
         setShieldTokens(data.tokens.shield);
@@ -213,7 +213,7 @@ export function RoundPage({ roundId, onExitRound }: RoundPageProps) {
 
     // Subscribe to submission updates
     const unsubscribeSubmission = socketService.onSubmissionUpdate((data: SubmissionUpdate) => {
-      if (data.teamName === teamName) {
+      if (data.teamName.toLowerCase().trim() === teamName.toLowerCase().trim()) {
         console.log('Real-time submission update:', data.questionId, data.status);
         // Update question status based on submission
         setQuestions((prev) => prev.map((q) =>
@@ -226,7 +226,7 @@ export function RoundPage({ roundId, onExitRound }: RoundPageProps) {
 
     // Subscribe to disqualification updates
     const unsubscribeDisqualification = socketService.onDisqualificationUpdate((data: DisqualificationUpdate) => {
-      if (data.teamName === teamName && data.roundId === roundId) {
+      if (data.teamName.toLowerCase().trim() === teamName.toLowerCase().trim() && data.roundId === roundId) {
         setIsDisqualified(data.isDisqualified);
         if (data.isDisqualified) {
           // Exit full screen if disqualified
@@ -239,16 +239,17 @@ export function RoundPage({ roundId, onExitRound }: RoundPageProps) {
 
     // Subscribe to sabotage attacks
     const unsubscribeSabotage = socketService.onSabotageAttack((data: any) => {
-      if (data.targetTeamName === teamName) {
+      if (data.targetTeamName.toLowerCase().trim() === teamName.toLowerCase().trim()) {
         console.log('You are being sabotaged!', data.type, 'from', data.attackerTeamName);
 
-        // Sabotage lasts 3 minutes
-        const duration = 180000;
+        // Use the endTime from the server if available, otherwise fallback to 1 minute
+        const endTime = data.endTime ? new Date(data.endTime).getTime() : Date.now() + 60000;
+        
         setActiveEffects((prev) => [
           ...prev,
           {
             type: data.type as SabotageEffect['type'],
-            endTime: Date.now() + duration,
+            endTime: endTime,
             fromTeam: data.attackerTeamName
           },
         ]);
@@ -268,7 +269,7 @@ export function RoundPage({ roundId, onExitRound }: RoundPageProps) {
       console.log('Leaderboard update received for Tactical Panel');
       setAllTeams((prevTeams) => {
         return data
-          .filter(t => t.teamName !== teamName) // Don't target yourself
+          .filter(t => t.teamName.toLowerCase().trim() !== teamName.toLowerCase().trim()) // Don't target yourself
           .map(t => ({
             id: t._id,
             name: t.teamName,

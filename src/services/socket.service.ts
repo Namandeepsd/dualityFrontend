@@ -1,8 +1,18 @@
 import { io, Socket } from 'socket.io-client';
 import { LeaderboardTeam } from './team.service';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const SOCKET_URL = API_URL.replace('/api', '');
+const getSocketUrl = () => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) return window.location.origin;
+    
+    // If it's a relative path, use current origin
+    if (apiUrl.startsWith('/')) return window.location.origin;
+    
+    // For absolute URLs, strip the /api suffix if present
+    return apiUrl.replace('/api', '');
+};
+
+const SOCKET_URL = getSocketUrl();
 
 export interface TeamStatsUpdate {
     teamName: string;
@@ -105,15 +115,18 @@ class SocketService {
             return;
         }
 
+        console.log('Attempting to connect to WebSocket at:', SOCKET_URL);
+
         this.socket = io(SOCKET_URL, {
-            transports: ['polling'],
+            transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionDelay: 1000,
-            reconnectionAttempts: 5,
+            reconnectionAttempts: 10,
+            timeout: 20000,
         });
 
         this.socket.on('connect', () => {
-            console.log('WebSocket connected:', this.socket?.id);
+            console.log('WebSocket connected successfully! ID:', this.socket?.id, 'Transport:', (this.socket?.io as any)?.engine?.transport?.name);
 
             // Authenticate if we have a token
             const token = localStorage.getItem('token');

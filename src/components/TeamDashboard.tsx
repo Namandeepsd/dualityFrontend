@@ -42,7 +42,7 @@ export function TeamDashboard({ onEnterRound }: TeamDashboardProps) {
     // Subscribe to real-time team stats updates
     const unsubscribeStats = socketService.onTeamStatsUpdate((data) => {
       // Only update if this is the current team
-      if (teamData && data.teamName === teamData.teamName) {
+      if (teamData && data.teamName.toLowerCase().trim() === teamData.teamName.toLowerCase().trim()) {
         console.log('Real-time team stats update received for current team');
         setTeamData((prev) => prev ? {
           ...prev,
@@ -80,11 +80,22 @@ export function TeamDashboard({ onEnterRound }: TeamDashboardProps) {
       setLeaderboardData(data);
     });
 
+    // Subscribe to sabotage attacks
+    const unsubscribeSabotage = socketService.onSabotageAttack((data: any) => {
+      if (teamData && data.targetTeamName === teamData.teamName) {
+        console.log('Real-time sabotage received in Dashboard!', data.type);
+        // We could show a toast here, or just let team stats update handle it
+        // The team stats update should also be triggered from the backend for the target
+        alert(`⚠️ Your team was just sabotaged with ${data.type} by ${data.attackerTeamName}!`);
+      }
+    });
+
     // Cleanup on unmount
     return () => {
       unsubscribeStats();
       unsubscribeDisqualification();
       unsubscribeLeaderboard();
+      unsubscribeSabotage();
     };
   }, [teamData?.teamName]);
 
