@@ -63,6 +63,43 @@ interface Student {
 
 type ActiveTab = 'questions' | 'students' | 'leaderboard' | 'settings';
 
+const defaultQuestionJSON = `{
+  "title": "Two Sum",
+  "difficulty": "Easy",
+  "category": "Arrays",
+  "description": "Given an array of integers nums and an integer target, return the indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+  "constraints": [
+    "2 <= nums.length <= 10^4",
+    "-10^9 <= nums[i] <= 10^9",
+    "-10^9 <= target <= 10^9",
+    "Only one valid answer exists"
+  ],
+  "examples": [
+    {
+      "input": "nums = [2,7,11,15], target = 9",
+      "output": "[0,1]",
+      "explanation": "nums[0] + nums[1] == 2 + 7 == 9, so we return [0, 1]."
+    }
+  ],
+  "testCases": [
+    { "input": "[2,7,11,15]\\n9", "output": "[0,1]" },
+    { "input": "[3,3]\\n6", "output": "[0,1]" }
+  ],
+  "boilerplate": {
+    "python": "def twoSum(nums, target):\\n    # write your solution here\\n    pass\\n",
+    "c": "int* twoSum(int* nums, int numsSize, int target, int* returnSize) {\\n    // write your solution here\\n}\\n",
+    "cpp": "#include <vector>\\nusing namespace std;\\nvector<int> twoSum(vector<int>& nums, int target) {\\n    // write your solution here\\n}\\n",
+    "java": "class Solution {\\n    public int[] twoSum(int[] nums, int target) {\\n        // write your solution here\\n    }\\n}\\n"
+  },
+  "driverCode": {
+    "python": "import sys\\nimport ast\\nimport json\\n\\n{{USER_CODE}}\\n\\nif __name__ == '__main__':\\n    inputs = sys.stdin.read().strip().split('\\\\n')\\n    nums = ast.literal_eval(inputs[0])\\n    target = int(inputs[1])\\n    print(json.dumps(sorted(twoSum(nums, target))).replace(' ', ''))\\n",
+    "c": "",
+    "cpp": "",
+    "java": ""
+  }
+}`;
+
+
 const getQuestionPoints = (difficulty: 'Easy' | 'Medium' | 'Hard') => {
   if (difficulty === 'Easy') return 100;
   if (difficulty === 'Medium') return 200;
@@ -88,6 +125,9 @@ export function AdminDashboard({
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const [editorMode, setEditorMode] = useState<'form' | 'json'>('form');
+  const [jsonInput, setJsonInput] = useState('');
+  const [jsonError, setJsonError] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -233,11 +273,14 @@ export function AdminDashboard({
 
   const handleAddQuestion = async () => {
     try {
-      const result = await createDualityQuestion(formData);
+      let data = formData;
+      if (editorMode === 'json') {
+        try { data = JSON.parse(jsonInput); } catch (err: any) { setJsonError('Invalid JSON: ' + err.message); return; }
+      }
+      const result = await createDualityQuestion(data);
       if (result.success) {
         fetchQuestions();
-        setShowAddModal(false);
-        resetForm();
+        closeModal();
       }
     } catch (error) {
       console.error('Error adding question:', error);
@@ -248,11 +291,14 @@ export function AdminDashboard({
   const handleEditQuestion = async () => {
     if (editingQuestion) {
       try {
-        const result = await updateDualityQuestion(editingQuestion._id, formData);
+        let data = formData;
+        if (editorMode === 'json') {
+          try { data = JSON.parse(jsonInput); } catch (err: any) { setJsonError('Invalid JSON: ' + err.message); return; }
+        }
+        const result = await updateDualityQuestion(editingQuestion._id, data);
         if (result.success) {
           fetchQuestions();
-          setEditingQuestion(null);
-          resetForm();
+          closeModal();
         }
       } catch (error) {
         console.error('Error editing question:', error);
@@ -277,7 +323,7 @@ export function AdminDashboard({
 
   const openEditModal = (question: Question) => {
     setEditingQuestion(question);
-    setFormData({
+    const data = {
       title: question.title,
       difficulty: question.difficulty,
       category: question.category,
@@ -287,7 +333,11 @@ export function AdminDashboard({
       testCases: question.testCases,
       boilerplate: question.boilerplate,
       driverCode: question.driverCode || { python: '', c: '', cpp: '', java: '' },
-    });
+    };
+    setFormData(data);
+    setJsonInput(JSON.stringify(data, null, 2));
+    setEditorMode('form');
+    setJsonError('');
   };
 
   const resetForm = () => {
@@ -317,7 +367,26 @@ export function AdminDashboard({
   const closeModal = () => {
     setShowAddModal(false);
     setEditingQuestion(null);
+    setEditorMode('form');
+    setJsonError('');
     resetForm();
+  };
+
+  const handleModeChange = (mode: 'form' | 'json') => {
+    if (mode === 'form' && editorMode === 'json') {
+      try {
+        const parsed = JSON.parse(jsonInput);
+        setFormData((prev) => ({ ...prev, ...parsed }));
+        setJsonError('');
+        setEditorMode('form');
+      } catch (err: any) {
+        setJsonError('Invalid JSON: ' + err.message);
+      }
+    } else if (mode === 'json' && editorMode === 'form') {
+      setJsonInput(JSON.stringify(formData, null, 2));
+      setJsonError('');
+      setEditorMode('json');
+    }
   };
 
   const addConstraint = () => {
@@ -527,7 +596,7 @@ export function AdminDashboard({
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-white">All Questions</h2>
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={() => { setShowAddModal(true); setJsonInput(defaultQuestionJSON); setEditorMode('form'); setJsonError(''); }}
                 className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors"
               >
                 <Plus className="w-4 h-4" />
@@ -898,11 +967,47 @@ export function AdminDashboard({
       {(showAddModal || editingQuestion) && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <h2 className="text-2xl font-bold text-white mb-6 flex-shrink-0">
-              {editingQuestion ? 'Edit Question' : 'Add New Question'}
-            </h2>
+            <div className="flex justify-between items-center mb-6 flex-shrink-0">
+              <h2 className="text-2xl font-bold text-white">
+                {editingQuestion ? 'Edit Question' : 'Add New Question'}
+              </h2>
+              <div className="flex bg-black rounded-lg p-1 border border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('form')}
+                  className={'px-4 py-1.5 rounded-md text-sm font-medium transition-colors ' + (editorMode === 'form' ? 'bg-zinc-800 text-white' : 'text-gray-400 hover:text-white')}
+                >
+                  Form
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('json')}
+                  className={'px-4 py-1.5 rounded-md text-sm font-medium transition-colors ' + (editorMode === 'json' ? 'bg-zinc-800 text-white' : 'text-gray-400 hover:text-white')}
+                >
+                  JSON
+                </button>
+              </div>
+            </div>
 
             <div className="space-y-6 overflow-y-auto pr-2 flex-1">
+              {jsonError && (
+                <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-red-500 text-sm">
+                  {jsonError}
+                </div>
+              )}
+
+              {editorMode === 'json' ? (
+                <div className="flex flex-col">
+                  <p className="text-gray-400 text-sm mb-2">Edit the raw JSON data for this question. Use the Two Sum example as reference for new questions.</p>
+                  <textarea
+                    value={jsonInput}
+                    onChange={(e) => { setJsonInput(e.target.value); setJsonError(''); }}
+                    className="w-full bg-black border border-zinc-800 rounded-lg p-4 text-green-400 font-mono text-sm focus:outline-none focus:border-zinc-500"
+                    style={{ minHeight: '420px', whiteSpace: 'pre-wrap' }}
+                  />
+                </div>
+              ) : (
+              <>
               {/* Basic Info */}
               <div className="space-y-5">
                 <div className="grid grid-cols-2 gap-4">
@@ -1184,6 +1289,8 @@ export function AdminDashboard({
                   </div>
                 </div>
               </div>
+              </>
+              )}
             </div>
 
             {/* Actions */}

@@ -35,6 +35,41 @@ interface Question {
   };
 }
 
+const defaultQuestionJSON = `{
+  "title": "Two Sum",
+  "difficulty": "Easy",
+  "category": "Arrays",
+  "description": "Given an array of integers \`nums\` and an integer \`target\`, return the indices of the two numbers such that they add up to \`target\`. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order.",
+  "inputFormat": "An array of integers \`nums\`, and an integer \`target\`",
+  "outputFormat": "An array of two integers representing the indices of the two numbers that add up to \`target\`",
+  "constraints": "2 <= nums.length <= 10^4\\n-10^9 <= nums[i] <= 10^9\\n-10^9 <= target <= 10^9\\nOnly one valid answer exists",
+  "examples": [
+    {
+      "input": "[2,7,11,15]\\n9",
+      "output": "[0,1]",
+      "explanation": "nums[0] + nums[1] == 2 + 7 == 9, so we return [0, 1]."
+    }
+  ],
+  "hiddenTestCases": [
+    {
+      "input": "[3,3]\\n6",
+      "output": "[0,1]"
+    }
+  ],
+  "boilerplateCode": {
+    "python": "def twoSum(nums, target):\\n    # write your solution here\\n    pass\\n",
+    "c": "int* twoSum(int* nums, int numsSize, int target, int* returnSize) {\\n    // write your solution here\\n}\\n",
+    "cpp": "#include <vector>\\nusing namespace std;\\n\\nvector<int> twoSum(vector<int>& nums, int target) {\\n    // write your solution here\\n}\\n",
+    "java": "class Solution {\\n    public int[] twoSum(int[] nums, int target) {\\n        // write your solution here\\n    }\\n}\\n"
+  },
+  "driverCode": {
+    "python": "import sys\\nimport ast\\nimport json\\n\\n{{USER_CODE}}\\n\\nif __name__ == '__main__':\\n    inputs = sys.stdin.read().strip().split('\\\\n')\\n    if len(inputs) >= 2:\\n        nums = ast.literal_eval(inputs[0])\\n        target = int(inputs[1])\\n        result = twoSum(nums, target)\\n        print(json.dumps(sorted(result)).replace(' ', ''))\\n",
+    "c": "#include <stdio.h>\\n#include <stdlib.h>\\n#include <string.h>\\n\\n{{USER_CODE}}\\n\\nint main() {\\n    char line[100000];\\n    fgets(line, sizeof(line), stdin);\\n    int nums[10001], numsSize = 0;\\n    char *p = line + 1;\\n    while (*p && *p != ']') {\\n        nums[numsSize++] = strtol(p, &p, 10);\\n        if (*p == ',') p++;\\n    }\\n    int target;\\n    scanf(\\\"%d\\\", &target);\\n    int returnSize;\\n    int *result = twoSum(nums, numsSize, target, &returnSize);\\n    int a = result[0], b = result[1];\\n    if (a > b) { int tmp = a; a = b; b = tmp; }\\n    printf(\\\"[%d,%d]\\\\n\\\", a, b);\\n    free(result);\\n    return 0;\\n}\\n",
+    "cpp": "#include <iostream>\\n#include <vector>\\n#include <sstream>\\n#include <algorithm>\\nusing namespace std;\\n\\n{{USER_CODE}}\\n\\nint main() {\\n    string line;\\n    getline(cin, line);\\n    vector<int> nums;\\n    // parse array from string like [2,7,11,15]\\n    line = line.substr(1, line.size() - 2);\\n    stringstream ss(line);\\n    string token;\\n    while (getline(ss, token, ',')) nums.push_back(stoi(token));\\n    int target;\\n    cin >> target;\\n    vector<int> result = twoSum(nums, target);\\n    sort(result.begin(), result.end());\\n    cout << \\\"[\\\" << result[0] << \\\",\\\" << result[1] << \\\"]\\\" << endl;\\n    return 0;\\n}\\n",
+    "java": "import java.util.*;\\n\\n{{USER_CODE}}\\n\\npublic class Main {\\n    public static void main(String[] args) {\\n        Scanner sc = new Scanner(System.in);\\n        String line = sc.nextLine().trim();\\n        line = line.substring(1, line.length() - 1);\\n        String[] parts = line.split(\\\",\\\");\\n        int[] nums = new int[parts.length];\\n        for (int i = 0; i < parts.length; i++) nums[i] = Integer.parseInt(parts[i].trim());\\n        int target = sc.nextInt();\\n        Solution sol = new Solution();\\n        int[] result = sol.twoSum(nums, target);\\n        Arrays.sort(result);\\n        System.out.println(\\\"[\\\" + result[0] + \\\",\\\" + result[1] + \\\"]\\\");\\n    }\\n}\\n"
+  }
+}`;
+
 export function QuestionsSection() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +78,9 @@ export function QuestionsSection() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [editorMode, setEditorMode] = useState<'form' | 'json'>('form');
+  const [jsonInput, setJsonInput] = useState('');
+  const [jsonError, setJsonError] = useState('');
   const [formData, setFormData] = useState<Partial<CreateQuestionData>>({
     title: '',
     difficulty: 'Easy',
@@ -94,7 +132,7 @@ export function QuestionsSection() {
   const handleOpenModal = (question?: Question) => {
     if (question) {
       setEditingQuestion(question);
-      setFormData({
+      const initialData = {
         title: question.title,
         difficulty: question.difficulty,
         category: question.category,
@@ -116,7 +154,9 @@ export function QuestionsSection() {
           cpp: '',
           java: '',
         },
-      });
+      };
+      setFormData(initialData);
+      setJsonInput(JSON.stringify(initialData, null, 2));
     } else {
       setEditingQuestion(null);
       setFormData({
@@ -142,7 +182,10 @@ export function QuestionsSection() {
           java: '',
         },
       });
+      setJsonInput(defaultQuestionJSON);
     }
+    setEditorMode('form');
+    setJsonError('');
     setIsModalOpen(true);
   };
 
@@ -152,15 +195,45 @@ export function QuestionsSection() {
     setError('');
   };
 
+  const handleModeChange = (mode: 'form' | 'json') => {
+    if (mode === 'form' && editorMode === 'json') {
+      try {
+        const parsed = JSON.parse(jsonInput);
+        setFormData((prev) => ({ ...prev, ...parsed }));
+        setJsonError('');
+        setEditorMode('form');
+      } catch (err: any) {
+        setJsonError('Invalid JSON format: ' + err.message);
+      }
+    } else if (mode === 'json' && editorMode === 'form') {
+      setJsonInput(JSON.stringify(formData, null, 2));
+      setJsonError('');
+      setEditorMode('json');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    let submissionData = { ...formData };
+    
+    if (editorMode === 'json') {
+      try {
+        const parsed = JSON.parse(jsonInput);
+        submissionData = { ...submissionData, ...parsed };
+      } catch (err: any) {
+        setJsonError('Invalid JSON format: ' + err.message);
+        return;
+      }
+    }
+
     setSubmitting(true);
     setError('');
 
     try {
       // Auto-calculate testCases from examples and hiddenTestCases
-      const totalTestCases = (formData.examples?.length || 0) + (formData.hiddenTestCases?.length || 0);
-      const dataToSubmit = { ...formData, testCases: totalTestCases };
+      const totalTestCases = (submissionData.examples?.length || 0) + (submissionData.hiddenTestCases?.length || 0);
+      const dataToSubmit = { ...submissionData, testCases: totalTestCases };
 
       if (editingQuestion) {
         await updateQuestion(editingQuestion._id, dataToSubmit);
@@ -189,7 +262,7 @@ export function QuestionsSection() {
     }
   };
 
-  const difficultyColors = {
+  const difficultyColors: Record<'Easy' | 'Medium' | 'Hard', string> = {
     Easy: 'text-green-500 bg-green-500/10',
     Medium: 'text-yellow-500 bg-yellow-500/10',
     Hard: 'text-red-500 bg-red-500/10',
@@ -255,7 +328,7 @@ export function QuestionsSection() {
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-white mb-2">{question.title}</h3>
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${difficultyColors[question.difficulty as keyof typeof difficultyColors]}`}>
+                    <span className={'px-2 py-1 rounded text-xs font-medium ' + difficultyColors[question.difficulty]}>
                       {question.difficulty}
                     </span>
                     <span className="text-gray-400 text-sm">{question.category}</span>
@@ -290,9 +363,27 @@ export function QuestionsSection() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
           <form onSubmit={handleSubmit} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <h2 className="text-2xl font-bold text-white mb-6 flex-shrink-0">
-              {editingQuestion ? 'Edit Question' : 'Add New Question'}
-            </h2>
+            <div className="flex justify-between items-center mb-6 flex-shrink-0">
+              <h2 className="text-2xl font-bold text-white">
+                {editingQuestion ? 'Edit Question' : 'Add New Question'}
+              </h2>
+              <div className="flex bg-black rounded-lg p-1 border border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('form')}
+                  className={'px-4 py-1.5 rounded-md text-sm font-medium transition-colors ' + (editorMode === 'form' ? 'bg-zinc-800 text-white' : 'text-gray-400 hover:text-white')}
+                >
+                  Form
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('json')}
+                  className={'px-4 py-1.5 rounded-md text-sm font-medium transition-colors ' + (editorMode === 'json' ? 'bg-zinc-800 text-white' : 'text-gray-400 hover:text-white')}
+                >
+                  JSON
+                </button>
+              </div>
+            </div>
 
             <div className="space-y-6 overflow-y-auto pr-2 flex-1">
               {error && (
@@ -301,8 +392,28 @@ export function QuestionsSection() {
                 </div>
               )}
 
-              <div className="space-y-5">
-                <div className="grid grid-cols-2 gap-4">
+              {editorMode === 'json' ? (
+                <div className="h-full flex flex-col">
+                  {jsonError && (
+                    <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-red-500 text-sm mb-4">
+                      {jsonError}
+                    </div>
+                  )}
+                  <p className="text-gray-400 text-sm mb-2">Edit the raw JSON data for this question.</p>
+                  <textarea
+                    value={jsonInput}
+                    onChange={(e) => {
+                       setJsonInput(e.target.value);
+                       setJsonError(''); // clear error while typing
+                    }}
+                    className="flex-1 w-full bg-black border border-zinc-800 rounded-lg p-4 text-green-400 font-mono text-sm focus:outline-none focus:border-zinc-500"
+                    style={{ minHeight: '400px', whiteSpace: 'pre-wrap' }}
+                  />
+                </div>
+              ) : (
+                <>
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-300 mb-2">Question Title *</label>
                     <input
@@ -642,7 +753,8 @@ export function QuestionsSection() {
                 </div>
                 <p className="text-xs text-gray-500 mt-2">Driver code overrides standard I/O reading. Leave driver code blank to use traditional CP execution defaults.</p>
               </div>
-
+              </>
+            )}
             </div>
 
             {/* Actions */}
